@@ -8,9 +8,6 @@ class Tokenizer:
         self.trained = False
 
     def init_vocab(self, words):
-        """
-        Initialize the vocabulary with the frequency of each character in all words.
-        """
         vocab = {}
         for word in words:
             for char in word:
@@ -18,9 +15,6 @@ class Tokenizer:
         return vocab
 
     def get_symbol_freq(self, all_words):
-        """
-        Calculate the frequency of each adjacent pair of symbols across all tokenized words.
-        """
         pairs = {}
         for word_tokens in all_words:
             tokens = word_tokens.split()
@@ -32,17 +26,11 @@ class Tokenizer:
         return pairs
 
     def merge_vocab(self, pair):
-        """
-        Update vocab dictionary with the new merged token.
-        """
         token_a, token_b = pair
         merged_token = token_a + token_b
         self.vocab[merged_token] = 0
 
     def merge_words(self, all_words, pair):
-        """
-        Replace all instances of the given pair in all word tokens with the merged token.
-        """
         token_a, token_b = pair
         merged = token_a + token_b
         pattern = f"{token_a} {token_b}"
@@ -54,7 +42,6 @@ class Tokenizer:
         all_words = [" ".join(list(word)) for word in words]
         self.vocab = self.init_vocab(words)
 
-        # Create a merge lookup dictionary
         self.merge_lookup = {}
 
         print("Starting training process...")
@@ -63,13 +50,11 @@ class Tokenizer:
             if not pairs:
                 break
 
-            # Find the most frequent pair
             best_pair, pair_freq = max(pairs.items(), key=lambda x: x[1])
 
             if best_pair in self.merge_lookup:
                 continue
 
-            # Print the merge operation
             print(f"Iteration {i + 1}: Merging pair {best_pair} with frequency {pair_freq}")
 
             self.merge_vocab(best_pair)
@@ -93,11 +78,11 @@ class Tokenizer:
 
         for word in words:
             word_tokens = ' '.join(list(word))
-            # Sort the merge pairs by length in descending order
+            # Naive encoding - sort the merge pairs by length in descending order
             sorted_merge_pairs = sorted(self.merge_lookup.keys(), key=len, reverse=True)
 
             for merge_pair in sorted_merge_pairs:
-                merge_pair_str = ' ' + ' '.join(merge_pair) + ' '
+                merge_pair_str = ' '.join(merge_pair)
                 if merge_pair_str in word_tokens:
                     word_tokens = word_tokens.replace(merge_pair_str, self.merge_lookup[merge_pair])
 
@@ -106,18 +91,19 @@ class Tokenizer:
         return tokenized_text
 
     def encode(self, text):
-        """
-        Encode the input text into a list of token IDs.
-        """
         tokens = self.tokenize(text)
-        print([token for token in tokens])
         encoded = [self.token_to_id.get(token, self.token_to_id['<UNK>']) for token in tokens]
         return encoded
 
     def decode(self, token_ids):
-        """
-        Decode a list of token IDs back into the original text.
-        """
         tokens = [self.id_to_token.get(token_id, '<UNK>') for token_id in token_ids]
         text = ' '.join(tokens).replace('  ', ' ').strip()
         return text
+
+tokenizer = Tokenizer(num_merges=100)
+text = "".join(open("input.txt").readlines()).replace(".", "").replace(",", "").lower()
+tokenizer.fit(text)
+encoded = tokenizer.encode(text)
+decoded = tokenizer.decode(encoded)
+print("Encoded:", encoded)
+print("Decoded:", decoded)
